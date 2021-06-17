@@ -1,8 +1,7 @@
-from flask import Flask,render_template,url_for,flash,redirect
-from forms import RegistrationForm,LoginForm
-app=Flask(__name__)
-
-app.config['SECRET_KEY']='e5aeeed185224376330bc6b0a1b0de38'
+from flask import render_template,url_for,flash,redirect
+from flaskblog.models import User,Post
+from flaskblog.forms import RegistrationForm,LoginForm
+from flaskblog import app
 
 posts=[
     {
@@ -46,7 +45,3 @@ def register():
         flash(f'Account created for {form.username.data}!!!','success')
         return redirect(url_for('home'))        
     return render_template('register.html',title='Register',form=form)
-
-if __name__=='__main__':
-    app.run(debug=True)
-
