@@ -1,27 +1,13 @@
 from flask import render_template,url_for,flash,redirect,request
 from flaskblog.models import User,Post
-from flaskblog.forms import RegistrationForm,LoginForm,ProfileUpdateForm
+from flaskblog.forms import RegistrationForm,LoginForm,ProfileUpdateForm,NewPost
 from flaskblog import app,db,bcrypt
 from flask_login import login_user,current_user,logout_user,login_required
-
-posts=[
-    {
-        'author':'Sai Vamshi',
-        'title':'Blog Post 1',
-        'content':'First blog post',
-        'date_posted':'April 18 2021'
-    },
-    {
-        'author':'KL Rahul',
-        'title':'Blog Post 2',
-        'content':'Second blog post',
-        'date_posted':'April 20 2021'
-    },
-]
 
 @app.route("/")
 @app.route("/home")
 def home():
+    posts=Post.query.all()
     return render_template('home.html',posts=posts)
 
 @app.route("/about")
@@ -65,9 +51,36 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
-@app.route("/account")
+@app.route("/account",methods=['GET','POST'])
 @login_required
 def account():
     form=ProfileUpdateForm()
+    if form.validate_on_submit():
+        current_user.username=form.username.data
+        current_user.email=form.email.data
+        db.session.commit()
+        flash(f'Account Updated Successfully','success')
+        return redirect(url_for('account'))
+    elif request.method=='GET':
+        form.username.data=current_user.username
+        form.email.data=current_user.email
     image_file=url_for('static',filename='profile_pics/'+current_user.image_file)
     return render_template('account.html',title='Account Page',image_file=image_file,form=form)
+
+@app.route("/post-new",methods=['GET','POST'])
+@login_required
+def newPost():
+    form=NewPost()
+    if form.validate_on_submit():
+        p1=Post(title=form.title.data,content=form.content.data,author=current_user)
+        db.session.add(p1)
+        db.session.commit()
+        flash(f'Post creation successful!','success')
+        return redirect(url_for('home'))
+    return render_template('new_post.html',title='Create-Post',form=form)
+
+
+@app.route("/post/<int:post_id>")
+def post(post_id):
+    post=Post.query.get_or_404(post_id)
+    return render_template('post.html',title=post.title,post=post)
